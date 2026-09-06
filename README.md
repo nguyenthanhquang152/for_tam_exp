@@ -15,6 +15,48 @@ Use `npm run standardize` and `npm run plot` for the analysis commands.
 `npm test` builds the app and runs Python, model, and browser checks.
 The [CI workflow](.github/workflows/ci.yml) runs the same checks on pushes and pull requests.
 
+## Reusable agent workflow
+
+Use the repository skill
+[`$update-shrimp-heatmap`](.agents/skills/update-shrimp-heatmap/SKILL.md) when adding
+or correcting raw data and producing the next heatmap version. `AGENTS.md` routes
+those tasks to the skill. It covers source inspection, adapter selection,
+canonicalization, source-order updates, evidence-based test adaptation, plot
+verification and authorized commit/push with CI monitoring.
+
+Example request (replace the filename and sampling order with the actual inputs):
+
+```text
+Use $update-shrimp-heatmap to add raw/new_sampling.xlsx after DOC56,
+preserve the existing measurements, rebuild and validate all heatmap views,
+then commit and push to the configured remote.
+```
+
+For a preview only, explicitly request a local release without commit/push. The
+skill respects that scope. It inspects the current source registry and tests;
+it does not assume that a future dataset still has four files or five shrimp.
+
+Two read-only helpers support the workflow:
+
+```sh
+.venv/bin/python .agents/skills/update-shrimp-heatmap/scripts/inspect_sources.py raw/new_sampling.xlsx
+.venv/bin/python .agents/skills/update-shrimp-heatmap/scripts/audit_release.py --root .
+```
+
+The inspector shows workbook structure without modifying it. The auditor derives
+current counts and checks raw/standardized fingerprints plus JSON/CSV agreement;
+an optional additive baseline checks preservation of prior records. Neither
+helper replaces independent raw-data checks or rendered-output validation.
+
+The skill uses Codex's [repository skill discovery](https://learn.chatgpt.com/docs/build-skills#where-to-save-skills)
+and is versioned with this project for future checkouts.
+
+The workflow was forward-tested in an isolated checkout with a synthetic DOC70
+source, a new taxon, a different sample size, and sparse treatment coverage.
+It produced validated local outputs while preserving the original observations
+and respecting the explicit no-publication boundary. Synthetic evaluation data
+is not part of this repository's experimental dataset.
+
 ## Sources and chronological order
 
 The default heatmap includes every source in this order. Within each treatment,

@@ -1,0 +1,3 @@
+interface:
+  display_name: "Update Shrimp Heatmap"
+  short_description: "Update shrimp data through verified heatmap releases"

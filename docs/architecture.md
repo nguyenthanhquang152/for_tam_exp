@@ -2,6 +2,7 @@
 
 ```text
 src/shrimp_microbiota/  Installable Python analysis package
+.agents/skills/        Repository workflows for future data/heatmap updates
 web/src/               TypeScript, CSS, and generated-data type declaration
 web/index.html         Browser document template
 tests/python/          Python data, plotting, and CLI contracts
@@ -18,6 +19,11 @@ docs/reference/        Original task brief and sample image
 .build/                Ignored intermediates, packages, and test diagnostics
 .github/workflows/     CI for clean-checkout verification
 ```
+
+`AGENTS.md` routes data-intake/release work to the project skill. Its scripts
+inspect inputs and audit outputs; scientific transformations remain in the Python
+package. The workflow adapts source selection and corpus-dependent tests from
+new evidence rather than treating the original dataset dimensions as limits.
 
 `raw/`, `standardized/`, `dist/`, and `reports/` are versioned scientific inputs
 and reviewed deliverables. Environment directories, Python package metadata,
