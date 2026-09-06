@@ -65,16 +65,18 @@
     <div class="below-figure">
       <details class="notes">
         <summary>How to read this figure</summary>
-        <p>Color represents the percentage of examined shrimp in which a taxon was detected: <strong>positive shrimp ÷ examined shrimp × 100</strong>. The scale stays fixed at 0–100% in every view and palette. White is zero; grey is a missing record.</p>
+        <p>Color represents the percentage of examined shrimp in which a taxon was detected: <strong>positive shrimp ÷ examined shrimp × 100</strong>. The scale stays fixed at 0–100% in every view and palette. White is zero; grey means a taxon is not listed for that sampling day, or its measurements are incomplete.</p>
+        <p>The default view compares DOC14 → DOC28 → DOC42 → DOC56 within each treatment. All views share the union of taxon names, so row positions stay aligned. Different species names are kept separate.</p>
+        <p id="day42-note" hidden></p>
         <p>This workbook measures detection prevalence, not bacterial density or relative abundance. Several taxa can occur in one shrimp, so percentages across taxa need not sum to 100. The colored groups follow the supplied reference figure and are display groups, not formal taxonomic ranks.</p>
         <p>HP is interpreted as hepatopancreas. Treatment codes and sampling labels are preserved from the workbook. Group totals and individual-shrimp profiles cannot be inferred from these summaries.</p>
       </details>
-      <details class="data-panel">
+      <details id="data-panel" class="data-panel">
         <summary>View underlying data <span id="record-count"></span></summary>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable data table">
           <table>
             <caption>Source counts and detection percentages for the selected view</caption>
-            <thead><tr><th scope="col">Taxon</th><th scope="col">Tissue</th><th scope="col">Treatment</th><th scope="col">Positive</th><th scope="col">Examined</th><th scope="col">Shrimp positive (%)</th></tr></thead>
+            <thead><tr><th scope="col">Taxon</th><th scope="col">Sampling</th><th scope="col">Tissue</th><th scope="col">Treatment</th><th scope="col">Positive</th><th scope="col">Examined</th><th scope="col">Missing measurements</th><th scope="col">Shrimp positive (%)</th></tr></thead>
             <tbody id="data-body"></tbody>
           </table>
         </div>

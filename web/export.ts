@@ -8,7 +8,7 @@ export function svgBlob(svg: SVGSVGElement): Blob {
   copy.setAttribute('role', 'img');
   copy.removeAttribute('aria-rowcount'); copy.removeAttribute('aria-colcount');
   const description = copy.querySelector('desc');
-  if (description) description.textContent = 'Bacterial detection prevalence in whiteleg shrimp: percentage of examined shrimp positive for each taxon. White means zero; grey means no record.';
+  if (description) description.textContent = 'Bacterial detection prevalence in whiteleg shrimp: percentage of examined shrimp positive for each taxon. White means zero; grey means a taxon is unlisted or measurements are incomplete.';
   return new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n', new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml;charset=utf-8' });
 }
 

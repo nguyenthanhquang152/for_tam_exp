@@ -1,0 +1,11 @@
+{
+  "source": "MA_42D.xlsx",
+  "sha256": "f1ca1afdd19568bd1385e7399f5d932845b1ef083ea64bf1af4673d6031d389b",
+  "time": "DOC42",
+  "blankPolicy": "missing",
+  "rawSamples": 50,
+  "rawMeasurements": 700,
+  "missingMeasurements": 28,
+  "summaryRows": 140,
+  "incompleteSummaries": 25
+}

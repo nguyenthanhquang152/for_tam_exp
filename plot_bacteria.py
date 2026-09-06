@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Plot the workbook's detection prevalence in the style of sample.jpeg.
 
-Run: python plot_bacteria.py [workbook.xlsx] --output-dir plots
+Run: python plot_bacteria.py [workbook.xlsx ...] --output-dir plots
+Without workbook arguments, load DOC14, DOC28, DOC42 and DOC56 in that order.
 The source is aggregated presence/absence data, not CFU or relative abundance.
 """
 
 import argparse
 import csv
-import math
 import re
 from pathlib import Path
 
@@ -17,89 +17,37 @@ matplotlib.use("Agg")  # Save figures without requiring a desktop/display.
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
-from openpyxl import load_workbook
 
 
-BASE = Path(__file__).resolve().parent
-GROUPS = (
-    ("Vibrio-related taxa", ("Vibrio", "Photobacterium", "Shewanella"), "#d7191c"),
-    ("Bacillus-related taxa", ("Bacillus", "Lactobacillus"), "#1476a3"),
-    ("Other bacterial taxa", (), "#72a936"),
-)
-TISSUE_NAMES = {"HP": "Hepatopancreas (HP)", "Gut": "Gut"}
+from bacteria_data import BASE, GROUPS, TISSUE_NAMES, read_data, taxon_group
+from export_web_data import DEFAULT_SOURCES, load_sources
 
 
-def read_data(path):
-    """Read summary rows; reject ambiguous keys, invalid counts or stale freq."""
-    workbook = load_workbook(path, read_only=True, data_only=True)
-    try:
-        if "summary" not in workbook.sheetnames:
-            raise ValueError("The workbook must contain a 'summary' sheet.")
-        values = iter(workbook["summary"].values)
-        headers = next(values, ())
-        required = ("Time", "Tissue", "Taxon", "Treatment", "n_shrimp", "n_pos", "freq")
-        if any(headers.count(name) != 1 for name in required):
-            raise ValueError(f"Required unique columns: {', '.join(required)}")
-        records, seen, denominators = [], set(), {}
-        for row_number, values_row in enumerate(values, start=2):
-            if all(value is None for value in values_row):
-                continue
-            row = dict(zip(headers, values_row))
-            for name in required[:4]:
-                value = row[name]
-                if not isinstance(value, str) or not value.strip():
-                    raise ValueError(f"Row {row_number}: missing or invalid {name}.")
-                row[name] = value.strip()
-            for name in required[4:]:
-                value = row[name]
-                if (isinstance(value, bool) or not isinstance(value, (int, float))
-                        or not math.isfinite(value)):
-                    raise ValueError(f"Row {row_number}: {name} must be a finite number.")
-            n, positive = row["n_shrimp"], row["n_pos"]
-            if n <= 0 or int(n) != n or not 0 <= positive <= n or int(positive) != positive:
-                raise ValueError(f"Row {row_number}: require integer 0 <= n_pos <= n_shrimp, n_shrimp > 0.")
-            if not math.isclose(row["freq"], positive / n, rel_tol=0, abs_tol=1e-9):
-                raise ValueError(f"Row {row_number}: freq does not equal n_pos / n_shrimp.")
-            key = tuple(row[name] for name in required[:4])
-            if key in seen:
-                raise ValueError(f"Row {row_number}: duplicate Time/Tissue/Taxon/Treatment: {key}")
-            seen.add(key)
-            cohort = (row["Time"], row["Tissue"], row["Treatment"])
-            if denominators.setdefault(cohort, n) != n:
-                raise ValueError(f"Row {row_number}: inconsistent n_shrimp for {cohort}.")
-            row["prevalence_pct"] = 100 * positive / n
-            records.append(row)
-        if not records:
-            raise ValueError("The summary sheet has no data rows.")
-        return records
-    finally:
-        workbook.close()
-
-
-def taxon_group(taxon):
-    """Visual bins follow the reference figure, not a formal taxonomic rank."""
-    genus = taxon.split()[0]
-    return next((i for i, (_, genera, _) in enumerate(GROUPS) if genus in genera), 2)
-
-
-def prepare_matrix(records):
-    """Return taxa x treatment percentages; absent records remain NaN, not zero."""
+def ordered_axes(records):
     taxa = sorted({r["Taxon"] for r in records}, key=lambda t: (
         taxon_group(t), t.split()[0] != "Vibrio", t))
     treatments = sorted({r["Treatment"] for r in records}, key=lambda value: [
         (0, int(part)) if part.isdigit() else (1, part)
         for part in re.split(r"(\d+)", value) if part
     ])
+    return taxa, treatments
+
+
+def prepare_matrix(records):
+    """Return one time/tissue's matrix; absent or incomplete values stay NaN."""
+    taxa, treatments = ordered_axes(records)
     lookup = {(r["Taxon"], r["Treatment"]): r["prevalence_pct"] for r in records}
+    if len(lookup) != len(records):
+        raise ValueError("Filter to one sampling time and tissue before creating a matrix.")
     matrix = np.array([[lookup.get((taxon, treatment), np.nan)
-                        for treatment in treatments] for taxon in taxa])
+                        for treatment in treatments] for taxon in taxa], dtype=float)
     return taxa, treatments, matrix
 
 
 def plot_figure(records, time, tissues):
     """Create aligned heatmaps with the reference's red scale and colored groups."""
     subset = [r for r in records if r["Time"] == time and r["Tissue"] in tissues]
-    taxa, treatments, _ = prepare_matrix(subset)
+    taxa, treatments = ordered_axes(records)
     labels, heading_rows, data_rows = [], {}, {}
     for group, (title, _, color) in enumerate(GROUPS):
         members = [taxon for taxon in taxa if taxon_group(taxon) == group]
@@ -133,7 +81,7 @@ def plot_figure(records, time, tissues):
             for x, treatment in enumerate(treatments):
                 row = lookup.get((taxon, treatment))
                 if row is not None:
-                    matrix[y, x] = row["prevalence_pct"]
+                    matrix[y, x] = row["prevalence_pct"] if row["prevalence_pct"] is not None else np.nan
         heatmap = ax.imshow(matrix, cmap=cmap, vmin=0, vmax=100, aspect="auto",
                             interpolation="nearest")
         for y, label in enumerate(labels):
@@ -178,7 +126,7 @@ def plot_figure(records, time, tissues):
     fig.text(0.5, 0.105, sample_note, ha="center", fontsize=11, color="#444444")
     fig.text(0.5, 0.062, "Color = 100 × n_pos / n_shrimp. Multiple taxa can occur in one shrimp.",
              ha="center", fontsize=11, color="#444444")
-    fig.text(0.5, 0.032, "Detection prevalence; not bacterial density or relative abundance. Gray = missing record.",
+    fig.text(0.5, 0.032, "Detection prevalence; not bacterial density or relative abundance. Gray = missing or incomplete data.",
              ha="center", fontsize=10, color="#555555")
 
     # Extend the section rules through their labels, as in the reference image.
@@ -199,17 +147,17 @@ def plot_figure(records, time, tissues):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("workbook", nargs="?", type=Path, default=BASE / "MA_56D_R_corrected.xlsx")
+    parser.add_argument("workbooks", nargs="*", type=Path)
     parser.add_argument("--output-dir", type=Path, default=BASE / "plots")
     args = parser.parse_args()
-    records = read_data(args.workbook)
+    records, sources = load_sources(args.workbooks or [BASE / name for name in DEFAULT_SOURCES])
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    fields = ["Time", "Tissue", "Taxon", "Treatment", "n_shrimp", "n_pos", "freq", "prevalence_pct"]
+    fields = ["Time", "Tissue", "Taxon", "Treatment", "n_shrimp", "n_pos", "freq", "prevalence_pct", "n_missing", "n_pos_observed"]
     with (args.output_dir / "plotted_data.csv").open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(records)
-    for time in sorted({r["Time"] for r in records}):
+    for time in [source["time"] for source in sources]:
         tissues = sorted({r["Tissue"] for r in records if r["Time"] == time},
                          key=lambda t: (t != "HP", t))
         panels = [[tissue] for tissue in tissues]

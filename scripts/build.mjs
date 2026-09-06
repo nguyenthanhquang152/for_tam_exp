@@ -10,8 +10,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 process.chdir(root);
 const venv = path.join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
 const python = process.env.HEATMAP_PYTHON || (existsSync(venv) ? venv : 'python3');
-const workbook = process.argv[2] || 'MA_56D_R_corrected.xlsx';
-const data = execFileSync(python, ['export_web_data.py', workbook], { encoding: 'utf8' });
+const data = execFileSync(python, ['export_web_data.py', ...process.argv.slice(2)], { encoding: 'utf8' });
 await writeFile('web/data.generated.json', data);
 execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'], { stdio: 'inherit' });
 const bundle = await build({
