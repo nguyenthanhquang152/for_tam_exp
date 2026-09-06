@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <!-- CSP -->
+  <title>Whiteleg shrimp · Culturable microbiota</title>
+  <link rel="icon" href="data:,">
+  <meta name="description" content="Explore validated bacterial detection prevalence in whiteleg shrimp tissues. An interactive, offline scientific heatmap.">
+  <!-- STYLE -->
+</head>
+<body>
+  <a class="skip-link" href="#figure-heading">Skip to heatmap</a>
+  <header class="masthead">
+    <span class="brand-mark" aria-hidden="true">▦</span>
+    <span>SHRIMP MICROBIOTA</span>
+    <span class="masthead-note">CULTURABLE BACTERIA</span>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="page-heading">
+      <div>
+        <p class="eyebrow">TISSUE MICROBIOTA / DETECTION PREVALENCE</p>
+        <h1 id="page-heading">Culturable shrimp microbiota</h1>
+        <p class="intro-description">Explore culturable bacterial taxa in whiteleg shrimp, across tissues and treatments.</p>
+      </div>
+      <p id="dataset-summary" class="dataset-summary">Loading validated workbook…</p>
+    </section>
+    <noscript><p class="error">Enable JavaScript to explore this figure. The Python-generated PNG and PDF figures are also available in the plots folder.</p></noscript>
+    <p id="fatal-error" class="error" role="alert" hidden></p>
+    <section id="explorer" class="paper" aria-labelledby="figure-heading">
+      <fieldset id="controls" class="toolbar" disabled>
+        <legend class="sr-only">Figure controls</legend>
+        <fieldset class="view-control">
+          <legend>Tissue view</legend>
+          <div id="view-options" class="segmented"></div>
+        </fieldset>
+        <label class="select-control">Sampling <select id="time-select" aria-label="Sampling time"></select></label>
+        <label class="select-control">Color palette
+          <select id="palette-select">
+            <option value="red">Red · reference</option>
+            <option value="blue">Ocean blue</option>
+            <option value="teal">Teal</option>
+          </select>
+        </label>
+        <div class="export-actions">
+          <button id="export-svg" type="button" class="button">Download SVG</button>
+          <button id="export-png" type="button" class="button primary">Download PNG <span>3×</span></button>
+        </div>
+      </fieldset>
+      <div class="figure-bar">
+        <h2 id="figure-heading" tabindex="-1">Detection prevalence by treatment</h2>
+        <span class="interaction-hint">Hover, tap, or use arrow keys to inspect a cell</span>
+      </div>
+      <div id="chart-scroll" class="chart-scroll" tabindex="0" role="region" aria-label="Scrollable heatmap" aria-describedby="chart-help">
+        <div id="chart"></div>
+      </div>
+      <p id="chart-help" class="sr-only">Tab to the first heatmap cell, then use arrow keys to move between cells. Home and End move within a row. Control Home and Control End move to the first and last cells. Escape dismisses cell details. A data table follows the figure.</p>
+      <div class="inspection" aria-live="polite" aria-atomic="true">
+        <span class="inspection-label">CELL DETAILS</span>
+        <p id="cell-details">Select a cell to see its taxon, treatment, and positive shrimp count.</p>
+      </div>
+      <p id="export-status" class="export-status" role="status" aria-live="polite"></p>
+    </section>
+    <div class="below-figure">
+      <details class="notes">
+        <summary>How to read this figure</summary>
+        <p>Color represents the percentage of examined shrimp in which a taxon was detected: <strong>positive shrimp ÷ examined shrimp × 100</strong>. The scale stays fixed at 0–100% in every view and palette. White is zero; grey is a missing record.</p>
+        <p>This workbook measures detection prevalence, not bacterial density or relative abundance. Several taxa can occur in one shrimp, so percentages across taxa need not sum to 100. The colored groups follow the supplied reference figure and are display groups, not formal taxonomic ranks.</p>
+        <p>HP is interpreted as hepatopancreas. Treatment codes and sampling labels are preserved from the workbook. Group totals and individual-shrimp profiles cannot be inferred from these summaries.</p>
+      </details>
+      <details class="data-panel">
+        <summary>View underlying data <span id="record-count"></span></summary>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable data table">
+          <table>
+            <caption>Source counts and detection percentages for the selected view</caption>
+            <thead><tr><th scope="col">Taxon</th><th scope="col">Tissue</th><th scope="col">Treatment</th><th scope="col">Positive</th><th scope="col">Examined</th><th scope="col">Shrimp positive (%)</th></tr></thead>
+            <tbody id="data-body"></tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+    <footer class="page-footer"><span id="source-note"></span><span>Whiteleg shrimp · Culturable microbiota</span></footer>
+  </main>
+  <div id="cell-tooltip" class="tooltip" role="tooltip" hidden></div>
+  <!-- SCRIPT -->
+</body>
+</html>

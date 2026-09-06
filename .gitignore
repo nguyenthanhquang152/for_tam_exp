@@ -1,0 +1,26 @@
+# Local dependencies and browser test libraries
+.venv/
+node_modules/
+.browser-libs/
+
+# Python bytecode and generated browser input
+__pycache__/
+*.py[cod]
+web/data.generated.json
+
+# Test artifacts and transient build files
+test-results/
+playwright-report/
+dist/*.tmp
+npm-debug.log*
+
+# Local configuration and editor/OS temporary files
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+~$*.xlsx
+*.swp
+
+# Keep dist/ and plots/: they contain the ready-to-open app and example figures.

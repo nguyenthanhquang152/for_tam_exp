@@ -1,0 +1,3 @@
+# Keep source files consistent and preserve Excel-compatible CSV line endings.
+* text=auto eol=lf
+*.csv text eol=crlf
