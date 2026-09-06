@@ -11,6 +11,8 @@ web/data.generated.json
 # Test artifacts and transient build files
 test-results/
 playwright-report/
+.codex/*.lock
+.codex/logs/
 dist/*.tmp
 npm-debug.log*
 
