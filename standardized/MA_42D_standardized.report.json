@@ -1,5 +1,7 @@
 {
   "source": "MA_42D.xlsx",
+  "rawPath": "raw/MA_42D.xlsx",
+  "method": "individual_shrimp_presence",
   "sha256": "f1ca1afdd19568bd1385e7399f5d932845b1ef083ea64bf1af4673d6031d389b",
   "time": "DOC42",
   "blankPolicy": "missing",
@@ -7,5 +9,7 @@
   "rawMeasurements": 700,
   "missingMeasurements": 28,
   "summaryRows": 140,
-  "incompleteSummaries": 25
+  "incompleteSummaries": 25,
+  "standardizedPath": "standardized/MA_42D_standardized.xlsx",
+  "standardizedSha256": "5ed0b30ec92f7d06238faf1cd58a69854c84c7e43e41080f047038faa0d1498a"
 }

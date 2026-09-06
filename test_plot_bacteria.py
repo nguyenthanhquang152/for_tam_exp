@@ -11,7 +11,7 @@ from plot_bacteria import BASE, prepare_matrix, read_data, plot_figure
 
 
 def main():
-    source = BASE / "MA_56D_R_corrected.xlsx"
+    source = BASE / "raw/MA_56D_R_corrected.xlsx"
     records = read_data(source)
     assert len(records) == 150
     assert {r["Time"] for r in records} == {"DOC56"}

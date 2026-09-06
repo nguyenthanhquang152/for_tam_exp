@@ -1,0 +1,13 @@
+{
+  "source": "MA_56D_R_corrected.xlsx",
+  "rawPath": "raw/MA_56D_R_corrected.xlsx",
+  "sha256": "fb8e8003b8f0118250a745c5bed9fceba52451e1314e9811dfcc05cc461cc893",
+  "time": "DOC56",
+  "method": "summary_column_normalization",
+  "blankPolicy": "missing",
+  "summaryRows": 150,
+  "missingMeasurements": 0,
+  "incompleteSummaries": 0,
+  "standardizedPath": "standardized/MA_56D_R_corrected_standardized.xlsx",
+  "standardizedSha256": "9e95c27c994782ca4388a349cdc9d2f4a2ee5d4365e26f32b23f6478d8f5c798"
+}

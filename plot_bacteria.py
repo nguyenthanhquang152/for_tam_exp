@@ -19,7 +19,7 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
 
-from bacteria_data import BASE, GROUPS, TISSUE_NAMES, read_data, taxon_group
+from bacteria_data import BASE, RAW_DIR, GROUPS, TISSUE_NAMES, read_data, taxon_group
 from export_web_data import DEFAULT_SOURCES, load_sources
 
 
@@ -150,7 +150,7 @@ def main():
     parser.add_argument("workbooks", nargs="*", type=Path)
     parser.add_argument("--output-dir", type=Path, default=BASE / "plots")
     args = parser.parse_args()
-    records, sources = load_sources(args.workbooks or [BASE / name for name in DEFAULT_SOURCES])
+    records, sources = load_sources(args.workbooks or [RAW_DIR / name for name in DEFAULT_SOURCES])
     args.output_dir.mkdir(parents=True, exist_ok=True)
     fields = ["Time", "Tissue", "Taxon", "Treatment", "n_shrimp", "n_pos", "freq", "prevalence_pct", "n_missing", "n_pos_observed"]
     with (args.output_dir / "plotted_data.csv").open("w", newline="", encoding="utf-8") as file:

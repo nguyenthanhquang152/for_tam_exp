@@ -3,18 +3,23 @@
 import hashlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from openpyxl import load_workbook
 
-from bacteria_data import BASE, read_data
+from bacteria_data import BASE, RAW_DIR, SUMMARY_COLUMNS, read_data
 from export_web_data import DEFAULT_SOURCES, export_data
 from standardize_day42 import standardize_day42
+from standardize_data import standardize_source
 
 
 def main():
-    raw_path = BASE / "MA_42D.xlsx"
+    raw_path = RAW_DIR / "MA_42D.xlsx"
     original_hash = hashlib.sha256(raw_path.read_bytes()).hexdigest()
-    data = export_data([BASE / name for name in DEFAULT_SOURCES])
+    with patch("export_web_data.read_data", wraps=read_data) as reader:
+        data = export_data([RAW_DIR / name for name in DEFAULT_SOURCES])
+        assert len(reader.call_args_list) == 4
+        assert all(Path(call.args[0]).parent == BASE / "standardized" for call in reader.call_args_list)
     assert [s["filename"] for s in data["sources"]] == list(DEFAULT_SOURCES)
     assert [s["time"] for s in data["sources"]] == ["DOC14", "DOC28", "DOC42", "DOC56"]
     assert len(data["rows"]) == 560
@@ -22,10 +27,25 @@ def main():
     assert sum(r["percent"] is None for r in data["rows"]) == 25
     for source, count in zip(data["sources"], (130, 140, 140, 150)):
         assert len([r for r in data["rows"] if r["time"] == source["time"]]) == count
-        assert source["sha256"] == hashlib.sha256((BASE / source["filename"]).read_bytes()).hexdigest()
+        assert source["sha256"] == hashlib.sha256((RAW_DIR / source["filename"]).read_bytes()).hexdigest()
+        assert source["rawPath"] == f"raw/{source['filename']}"
+        standardized = BASE / source["standardizedFilename"]
+        assert source["standardizedSha256"] == hashlib.sha256(standardized.read_bytes()).hexdigest()
+        workbook = load_workbook(standardized, read_only=True, data_only=True)
+        assert tuple(c.value for c in workbook["summary"][1]) == SUMMARY_COLUMNS
+        assert {"summary", "validation_check", "issues_if_any", "normalization_notes"} <= set(workbook.sheetnames)
+        workbook.close()
+        # A repeat conversion must produce identical standardized bytes.
+        standardize_source(RAW_DIR / source["filename"])
+        assert source["standardizedSha256"] == hashlib.sha256(standardized.read_bytes()).hexdigest()
     for name in (DEFAULT_SOURCES[0], DEFAULT_SOURCES[1], DEFAULT_SOURCES[3]):
-        rows = read_data(BASE / name)
+        rows = read_data(RAW_DIR / name)
+        canonical = read_data(BASE / next(s["standardizedFilename"] for s in data["sources"] if s["filename"] == name))
+        assert len(rows) == len(canonical)
+        key = lambda row: (row["Time"], row["Tissue"], row["Treatment"], row["Taxon"])
+        by_key = {key(row): row for row in canonical}
         for row in rows:
+            assert tuple(by_key[key(row)][c] for c in SUMMARY_COLUMNS) == tuple(row[c].strip() if c == "Phylum" else row[c] for c in SUMMARY_COLUMNS)
             expected = 100 * row["n_pos"] / row["n_shrimp"]
             actual = next(r for r in data["rows"] if (r["time"], r["tissue"], r["treatment"], r["taxon"]) ==
                           (row["Time"], row["Tissue"], row["Treatment"], row["Taxon"]))
@@ -78,7 +98,7 @@ def main():
                 pass
             else:
                 raise AssertionError(f"Invalid raw source accepted: {coordinate}={value}")
-    print("PASS: 560 source summaries, all 700 day-42 readings, 28 missing readings / 25 unknown percentages, source order and immutable originals.")
+    print("PASS: all four standardized schemas and deterministic files, 560 source summaries, 700 day-42 readings, 25 unknown percentages, ordered sources and immutable raw inputs.")
 
 
 if __name__ == "__main__":

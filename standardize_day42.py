@@ -7,10 +7,10 @@ import math
 from collections import defaultdict
 from pathlib import Path
 
-from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Font, PatternFill
+from openpyxl import load_workbook
 
-from bacteria_data import BASE, read_data
+from bacteria_data import RAW_DIR, STANDARDIZED_DIR, SUMMARY_COLUMNS
+from standardize_data import file_reference, write_standardized_workbook
 
 
 def standardize_day42(source, output):
@@ -92,14 +92,12 @@ def standardize_day42(source, output):
     finally:
         workbook.close()
 
-    report = {"source": source.name, "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+    report = {"source": source.name, "rawPath": file_reference(source), "method": "individual_shrimp_presence", "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
               "time": "DOC42", "blankPolicy": "missing", "rawSamples": len(samples),
               "rawMeasurements": len(raw), "missingMeasurements": len(issues),
               "summaryRows": len(summary), "incompleteSummaries": sum(r[8] > 0 for r in summary)}
-    result = Workbook()
-    result.remove(result.active)
     contents = {
-        "summary": (["Time", "Tissue", "Taxon", "Phylum", "Treatment", "n_shrimp", "n_pos", "freq", "n_missing", "n_pos_observed"], summary),
+        "summary": (SUMMARY_COLUMNS, summary),
         "validation_check": (["Treatment", "Tissue", "n_taxa", "n_shrimp_unique", "n_incomplete_taxa"], checks),
         "issues_if_any": (["Time", "Tissue", "Treatment", "Taxon", "Shrimp", "SourceCell", "Issue", "Handling"], issues),
         "raw_observations": (["Time", "Treatment", "Shrimp", "Tissue", "Dilution", "Taxon", "Phylum", "Measurement", "SourceCell"], raw),
@@ -111,34 +109,12 @@ def standardize_day42(source, output):
             ["Time label", "DOC42 from the user-specified sampling source MA_42D.xlsx."],
         ]),
     }
-    for name, (headers, rows) in contents.items():
-        sheet = result.create_sheet(name)
-        sheet.append(headers)
-        for row in rows:
-            sheet.append(row)
-        sheet.freeze_panes = "A2"
-        sheet.auto_filter.ref = sheet.dimensions
-        for cell in sheet[1]:
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.fill = PatternFill("solid", fgColor="245C50")
-        for col in sheet.columns:
-            sheet.column_dimensions[col[0].column_letter].width = min(62, max(12, max(len(str(c.value or "")) for c in col) + 2))
-    output.parent.mkdir(parents=True, exist_ok=True)
-    temporary = output.with_suffix(".tmp.xlsx")
-    try:
-        result.save(temporary)
-        read_data(temporary)  # Must satisfy the common schema before publication.
-        temporary.replace(output)
-    finally:
-        result.close()
-        temporary.unlink(missing_ok=True)
-    output.with_suffix(".report.json").write_text(json.dumps(report, indent=2) + "\n")
-    return report
+    return write_standardized_workbook(output, contents, report)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("source", nargs="?", type=Path, default=BASE / "MA_42D.xlsx")
-    parser.add_argument("--output", type=Path, default=BASE / "standardized/MA_42D_standardized.xlsx")
+    parser.add_argument("source", nargs="?", type=Path, default=RAW_DIR / "MA_42D.xlsx")
+    parser.add_argument("--output", type=Path, default=STANDARDIZED_DIR / "MA_42D_standardized.xlsx")
     args = parser.parse_args()
     print(json.dumps(standardize_day42(args.source, args.output), indent=2))

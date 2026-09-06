@@ -1,0 +1,13 @@
+{
+  "source": "MA_28D_R.xlsx",
+  "rawPath": "raw/MA_28D_R.xlsx",
+  "sha256": "3cd70450ec9d8ab2b441b5a14ed7b4fb98f33cc14aeb293c97eb07ff5e5f2326",
+  "time": "DOC28",
+  "method": "summary_column_normalization",
+  "blankPolicy": "missing",
+  "summaryRows": 140,
+  "missingMeasurements": 0,
+  "incompleteSummaries": 0,
+  "standardizedPath": "standardized/MA_28D_R_standardized.xlsx",
+  "standardizedSha256": "418487a6f976785c853907add99bfd16808c05daa62473c7297f2a333ae3ff19"
+}

@@ -7,6 +7,10 @@ from openpyxl import load_workbook
 
 
 BASE = Path(__file__).resolve().parent
+RAW_DIR = BASE / "raw"
+STANDARDIZED_DIR = BASE / "standardized"
+DEFAULT_SOURCES = ("MA_D14_R.xlsx", "MA_28D_R.xlsx", "MA_42D.xlsx", "MA_56D_R_corrected.xlsx")
+SUMMARY_COLUMNS = ("Time", "Tissue", "Taxon", "Phylum", "Treatment", "n_shrimp", "n_pos", "freq", "n_missing", "n_pos_observed")
 GROUPS = (
     ("Vibrio-related taxa", ("Vibrio", "Photobacterium", "Shewanella"), "#d7191c"),
     ("Bacillus-related taxa", ("Bacillus", "Lactobacillus"), "#1476a3"),

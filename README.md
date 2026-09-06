@@ -10,12 +10,12 @@ The default heatmap includes every source in this order. Within each treatment,
 columns run **DOC14 → DOC28 → DOC42 → DOC56**. Tissue controls select HP, Gut,
 or both; the sampling selector offers all days or an individual day.
 
-| Source | Sampling | Taxa listed | Summary rows | Unknown percentages |
-| --- | --- | ---: | ---: | ---: |
-| [MA_D14_R.xlsx](MA_D14_R.xlsx) | DOC14 | 13 | 130 | 0 |
-| [MA_28D_R.xlsx](MA_28D_R.xlsx) | DOC28 | 14 | 140 | 0 |
-| [MA_42D.xlsx](MA_42D.xlsx) | DOC42 | 14 | 140 | 25 |
-| [MA_56D_R_corrected.xlsx](MA_56D_R_corrected.xlsx) | DOC56 | 15 | 150 | 0 |
+| Raw source | Standardized source | Sampling | Taxa listed | Summary rows | Unknown percentages |
+| --- | --- | --- | ---: | ---: | ---: |
+| [MA_D14_R.xlsx](raw/MA_D14_R.xlsx) | [DOC14](standardized/MA_D14_R_standardized.xlsx) | DOC14 | 13 | 130 | 0 |
+| [MA_28D_R.xlsx](raw/MA_28D_R.xlsx) | [DOC28](standardized/MA_28D_R_standardized.xlsx) | DOC28 | 14 | 140 | 0 |
+| [MA_42D.xlsx](raw/MA_42D.xlsx) | [DOC42](standardized/MA_42D_standardized.xlsx) | DOC42 | 14 | 140 | 25 |
+| [MA_56D_R_corrected.xlsx](raw/MA_56D_R_corrected.xlsx) | [DOC56](standardized/MA_56D_R_corrected_standardized.xlsx) | DOC56 | 15 | 150 | 0 |
 
 The combined dataset has **560 summary records and 16 distinct taxa**. Every
 view uses the same taxon rows. The all-days, both-tissues view has 640 cells:
@@ -25,8 +25,31 @@ taxon is not listed in that source. Missing is never converted to zero.
 Names are trimmed of surrounding whitespace. Different species remain distinct:
 DOC14's *Ruegeria arenilitoris* is not merged with *Ruegeria profundi* from later
 days. *Micrococcus luteus* is only listed in DOC56. The original four workbooks
-are preserved; source SHA-256 fingerprints are included in
+are preserved byte-for-byte in `raw/`; raw and standardized SHA-256 fingerprints are included in
 [dist/data.json](dist/data.json).
+
+## Standardizing every source
+
+[standardize_data.py](standardize_data.py) generates all four workbooks in
+`standardized/`. Each has the same ten summary columns, deterministic row order,
+header styling, and `validation_check`, `issues_if_any`, and `normalization_notes`
+sheets. DOC42 additionally retains its 700 individual measurement records.
+
+The common schema is `Time, Tissue, Taxon, Phylum, Treatment, n_shrimp, n_pos,
+freq, n_missing, n_pos_observed`. For the existing DOC14, DOC28 and DOC56 summaries,
+standardization trims label whitespace, orders columns/rows, and adds explicit
+missing-data fields while preserving counts and frequencies. Original audit
+sheets remain available in the untouched raw files.
+
+Both the browser build and Python plots run standardization first and then read
+**only the standardized workbooks**. Every workbook has a matching `.report.json`
+with raw/standardized paths, fingerprints, transformation method and row counts.
+Identical inputs and rules produce identical workbook bytes; generated archive
+metadata timestamps are fixed for reproducibility, independent of sampling dates.
+
+```sh
+.venv/bin/python standardize_data.py
+```
 
 ## Day-42 standardization
 
@@ -115,7 +138,7 @@ The default build loads the four sources listed above. Explicit source arguments
 are loaded in the order supplied; each must have one distinct sampling time:
 
 ```sh
-npm run build -- MA_D14_R.xlsx MA_28D_R.xlsx MA_42D.xlsx MA_56D_R_corrected.xlsx
+npm run build -- raw/MA_D14_R.xlsx raw/MA_28D_R.xlsx raw/MA_42D.xlsx raw/MA_56D_R_corrected.xlsx
 .venv/bin/python plot_bacteria.py
 ```
 
@@ -125,12 +148,13 @@ each day in HP, Gut and combined views, plus all 560 records in
 list of workbook paths and `--output-dir`. Example for one source:
 
 ```sh
-.venv/bin/python plot_bacteria.py MA_56D_R_corrected.xlsx --output-dir /tmp/doc56-plots
+.venv/bin/python plot_bacteria.py raw/MA_56D_R_corrected.xlsx --output-dir /tmp/doc56-plots
 ```
 
 ## Implementation and verification
 
 - [bacteria_data.py](bacteria_data.py): shared schema validation and taxon groups.
+- [standardize_data.py](standardize_data.py): canonical workbooks and audit reports for every source.
 - [standardize_day42.py](standardize_day42.py): auditable raw-data conversion.
 - [export_web_data.py](export_web_data.py): ordered source loading and version-2
   browser data with source fingerprints and explicit missing measurements.
@@ -154,7 +178,7 @@ npm test
 
 Tests rebuild the application, retain the original DOC56 regression checks,
 independently recount all 700 day-42 measurements, compare all source summaries,
-and test browser values, chronological ordering, unknown/absent/zero semantics,
+verify all standardized schemas and byte-stable rebuilds, and test browser values, chronological ordering, unknown/absent/zero semantics,
 all sampling controls, keyboard/touch interactions and SVG/PNG exports. PNG
 checks compare cell-center pixels with their SVG colors. Offline tests deny
 all HTTP(S) requests while opening the standalone file.
