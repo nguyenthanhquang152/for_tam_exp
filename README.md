@@ -2,7 +2,18 @@
 
 Open [dist/heatmap.html](dist/heatmap.html) in a browser. The application works
 offline with its data, styles and JavaScript embedded. No server or account is
-required. [Desktop preview](dist/preview.png) · [Example exports](dist/exports)
+required. [Desktop preview](reports/previews/preview.png) · [Example exports](reports/web)
+
+## Project structure
+
+Python analysis code lives in `src/shrimp_microbiota/`; browser source is in
+`web/src/`. Tests are separated into `tests/python/`, `tests/unit/`, and
+`tests/e2e/`. Figures and previews live in `reports/`, while `dist/` contains
+only the standalone browser release. See [architecture and migration notes](docs/architecture.md).
+
+Use `npm run standardize` and `npm run plot` for the analysis commands.
+`npm test` builds the app and runs Python, model, and browser checks.
+The [CI workflow](.github/workflows/ci.yml) runs the same checks on pushes and pull requests.
 
 ## Sources and chronological order
 
@@ -30,7 +41,7 @@ are preserved byte-for-byte in `raw/`; raw and standardized SHA-256 fingerprints
 
 ## Standardizing every source
 
-[standardize_data.py](standardize_data.py) generates all four workbooks in
+[standardization.py](src/shrimp_microbiota/standardization.py) generates all four workbooks in
 `standardized/`. Each has the same ten summary columns, deterministic row order,
 header styling, and `validation_check`, `issues_if_any`, and `normalization_notes`
 sheets. DOC42 additionally retains its 700 individual measurement records.
@@ -48,12 +59,12 @@ Identical inputs and rules produce identical workbook bytes; generated archive
 metadata timestamps are fixed for reproducibility, independent of sampling dates.
 
 ```sh
-.venv/bin/python standardize_data.py
+.venv/bin/python -m shrimp_microbiota standardize
 ```
 
 ## Day-42 standardization
 
-[standardize_day42.py](standardize_day42.py) produces
+[day42.py](src/shrimp_microbiota/day42.py) produces
 [standardized/MA_42D_standardized.xlsx](standardized/MA_42D_standardized.xlsx)
 before the heatmap reads day 42. The workbook includes:
 
@@ -82,7 +93,7 @@ the workbook at
 [standardized/MA_42D_standardized.report.json](standardized/MA_42D_standardized.report.json).
 
 ```sh
-.venv/bin/python standardize_day42.py
+.venv/bin/python -m shrimp_microbiota standardize raw/MA_42D.xlsx
 ```
 
 ## Reading and exporting the figure
@@ -122,13 +133,13 @@ Requires Node.js 22+ and Python 3.12+:
 
 ```sh
 python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip install -e .
 npm ci
 npm run build
 npm run preview
 ```
 
-The prepared `.venv` in this workspace already contains the Python dependencies.
+The Python package supplies the `shrimp-heatmap` command and `python -m shrimp_microbiota`. The prepared `.venv` in this workspace contains the installed package.
 The build uses it automatically; `HEATMAP_PYTHON` can select a different Python
 executable. Windows environments at `.venv/Scripts/python.exe` are recognized.
 Preview serves `http://127.0.0.1:4173`. Rebuild after changing code or workbooks;
@@ -139,30 +150,30 @@ are loaded in the order supplied; each must have one distinct sampling time:
 
 ```sh
 npm run build -- raw/MA_D14_R.xlsx raw/MA_28D_R.xlsx raw/MA_42D.xlsx raw/MA_56D_R_corrected.xlsx
-.venv/bin/python plot_bacteria.py
+.venv/bin/python -m shrimp_microbiota plot
 ```
 
 The Python command uses the same loader and writes 300 dpi PNG/PDF figures for
 each day in HP, Gut and combined views, plus all 560 records in
-[plots/plotted_data.csv](plots/plotted_data.csv). It also accepts an explicit
+[reports/python/plotted_data.csv](reports/python/plotted_data.csv). It also accepts an explicit
 list of workbook paths and `--output-dir`. Example for one source:
 
 ```sh
-.venv/bin/python plot_bacteria.py raw/MA_56D_R_corrected.xlsx --output-dir /tmp/doc56-plots
+.venv/bin/python -m shrimp_microbiota plot raw/MA_56D_R_corrected.xlsx --output-dir /tmp/doc56-plots
 ```
 
 ## Implementation and verification
 
-- [bacteria_data.py](bacteria_data.py): shared schema validation and taxon groups.
-- [standardize_data.py](standardize_data.py): canonical workbooks and audit reports for every source.
-- [standardize_day42.py](standardize_day42.py): auditable raw-data conversion.
-- [export_web_data.py](export_web_data.py): ordered source loading and version-2
+- [data.py](src/shrimp_microbiota/data.py): shared schema validation and taxon groups.
+- [standardization.py](src/shrimp_microbiota/standardization.py): canonical workbooks and audit reports for every source.
+- [day42.py](src/shrimp_microbiota/day42.py): auditable raw-data conversion.
+- [dataset.py](src/shrimp_microbiota/dataset.py): ordered source loading and version-2
   browser data with source fingerprints and explicit missing measurements.
-- [web/model.ts](web/model.ts): browser validation and sequential palettes.
-- [web/heatmap.ts](web/heatmap.ts): SVG rendering keyed by sampling time, taxon,
+- [web/src/model.ts](web/src/model.ts): browser validation and sequential palettes.
+- [web/src/heatmap.ts](web/src/heatmap.ts): SVG rendering keyed by sampling time, taxon,
   tissue and treatment, with aligned taxon rows across views.
-- [web/app.ts](web/app.ts): controls, accessible details and data table.
-- [web/export.ts](web/export.ts): SVG and Canvas PNG downloads with error handling.
+- [web/src/app.ts](web/src/app.ts): controls, accessible details and data table.
+- [web/src/export.ts](web/src/export.ts): SVG and Canvas PNG downloads with error handling.
 - [scripts/build.mjs](scripts/build.mjs): strict TypeScript checking, esbuild and
   a standalone HTML artifact with exact script/style hashes in its CSP.
 
@@ -186,9 +197,9 @@ all HTTP(S) requests while opening the standalone file.
 Accessibility checks use axe's WCAG 2/2.1 A and AA rules with the data table
 expanded. Automated checks do not replace testing with actual assistive
 technologies. Browser failures retain traces and an HTML report in
-`playwright-report`.
+`.build/playwright-report`.
 
-Verified on 2026-09-06: both Python check sets, four model tests, and all 24
+Verified on 2026-09-06: the Python data/plotting contracts, four model tests, and all 24
 browser tests passed across Chromium, Firefox and WebKit, including the expanded
 data table's automated accessibility scan. All 560 source summaries and all 700
 raw day-42 measurements were checked.

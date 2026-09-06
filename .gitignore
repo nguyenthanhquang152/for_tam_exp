@@ -6,11 +6,11 @@ node_modules/
 # Python bytecode and generated browser input
 __pycache__/
 *.py[cod]
-web/data.generated.json
+*.egg-info/
 
 # Test artifacts and transient build files
-test-results/
-playwright-report/
+.build/
+build/
 .codex/*.lock
 .codex/logs/
 dist/*.tmp
@@ -25,4 +25,4 @@ Thumbs.db
 ~$*.xlsx
 *.swp
 
-# Keep dist/ and plots/: they contain the ready-to-open app and example figures.
+# Keep dist/ and reports/: they contain the ready-to-open app and reviewed figures.

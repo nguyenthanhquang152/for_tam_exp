@@ -1,3 +1,2 @@
-matplotlib==3.11.1
-numpy==2.5.2
-openpyxl==3.1.5
+# Compatibility entry point; dependency versions live in pyproject.toml.
+-e .

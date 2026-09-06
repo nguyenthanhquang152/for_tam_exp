@@ -8,6 +8,8 @@
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "preview": "node scripts/preview.mjs",
+    "standardize": "node scripts/analysis.mjs standardize",
+    "plot": "node scripts/analysis.mjs plot",
     "pretest": "npm run build",
     "test": "node scripts/check.mjs"
   },
